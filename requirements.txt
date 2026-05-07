@@ -8,3 +8,5 @@ scipy
 pytest
 pynance
 TA-Lib
+jupyter
+ipykernel
