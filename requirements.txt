@@ -1,12 +1,34 @@
-pandas
-numpy
-matplotlib
-seaborn
-nltk
-scikit-learn
-scipy
-pytest
+# pandas
+# numpy
+# matplotlib
+# seaborn
+# nltk
+# scikit-learn
+# scipy
+# pytest
+# pynance
+# TA-Lib
+# jupyter
+# ipykernel
+
+# Legacy Core (Required for pynance)
+pandas==1.5.3
+numpy<2.0.0
+scipy<1.13.0
+
+
 pynance
 TA-Lib
+
+
+matplotlib
+seaborn
+
+
+nltk
+scikit-learn
+
+
+pytest
 jupyter
 ipykernel
