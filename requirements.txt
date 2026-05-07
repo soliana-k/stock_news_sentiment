@@ -1,0 +1,10 @@
+pandas
+numpy
+matplotlib
+seaborn
+nltk
+scikit-learn
+scipy
+pytest
+pynance
+TA-Lib
