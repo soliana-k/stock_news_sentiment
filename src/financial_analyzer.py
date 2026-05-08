@@ -77,18 +77,47 @@ class FinancialAnalyzer:
 
 
     def finance_metrics(self):
-        pass
+        try:
+            self.df['Daily_Return'] = self.df['Close'].pct_change()
+            self.df['Cumulative_Return'] = (1 + self.df['Daily_Return']).cumprod() - 1
+            self.df['Volatility'] = self.df['Daily_Return'].rolling(window=20).std()
+            self.df['Signal_Score'] = 0 
+            self.df['PyN_OBV'] = pn_tech.obv(self.df.Close, self.df.Volume)
+            upper, mid, lower = pn_tech.bollinger(self.df.Close, period=20, width=2)
+            self.df['BB_Upper'], self.df['BB_Mid'], self.df['BB_Lower'] = upper, mid, lower
+            self.df.loc[self.df['Close'] > self.df['SMA_20'], 'Signal_Score'] += 1 
+            self.df.loc[self.df['Close'] < self.df['SMA_20'], 'Signal_Score'] -= 1
+            self.df.loc[self.df['RSI'] < 30, 'Signal_Score'] += 1
+            self.df.loc[self.df['RSI'] > 70, 'Signal_Score'] -= 1
+            self.df.loc[self.df['MACD'] > self.df['MACD_Signal'], 'Signal_Score'] += 1
+            self.df.loc[self.df['MACD'] < self.df['MACD_Signal'], 'Signal_Score'] -= 1
+            def classify_verdict(score):
+                    if score >= 2: return 'Strong Bullish'
+                    elif score == 1: return 'Bullish'
+                    elif score == -1: return 'Bearish'
+                    elif score <= -2: return 'Strong Bearish'
+                    return 'Neutral'
+
+            self.df['Technical_Verdict'] = self.df['Signal_Score'].apply(classify_verdict)
+            
+            logger.info(f"Technical sentiment and metrics calculated for {self.ticker}")
+            print(self.df['Technical_Verdict'])
+        except Exception as e:
+            logger.error(f"Error in finance_metrics: {e}")
+
+
+        
 
     def visualize(self):
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
         
-        # Price & PyNance SMA
+        
         ax1.plot(self.df.index, self.df['Close'], label='Close Price', alpha=0.7)
         ax1.plot(self.df.index, self.df['PyN_SMA'], label='PyNance Simple Moving Average 20', color='orange')
         ax1.set_title(f"{self.ticker} Technical Dashboard")
         ax1.legend(loc='best')
         
-        # Relative Strength Index
+        
         ax2.plot(self.df.index, self.df['RSI'], color='purple', label='RSI')
         ax2.axhline(70, color='red', linestyle='--', alpha=0.5)
         ax2.axhline(30, color='green', linestyle='--', alpha=0.5)
@@ -103,9 +132,40 @@ class FinancialAnalyzer:
         plt.tight_layout()
         plt.show()
         
+    def output_insights(self):
+        """Generates a professional summary of technical and financial status."""
+        latest = self.df.iloc[-1]
+        prev = self.df.iloc[-2]
+        
+        
+        price_change = ((latest['Close'] - prev['Close']) / prev['Close']) * 100
+        volatility_status = "High" if latest['Volatility'] > self.df['Volatility'].mean() else "Low"
+        
+        print("-" * 50)
+        print(f"INVESTMENT INSIGHTS FOR: {self.ticker}")
+        print("-" * 50)
+        
+        
+        print(f"Current Price: ${latest['Close']:.2f} ({price_change:+.2f}%)")
+        print(f"Technical Verdict: {latest['Technical_Verdict'].upper()}")
+        
+        print(f"\n--- Indicator Breakdown ---")
+        print(f"• RSI: {latest['RSI']:.2f} ({'Overbought' if latest['RSI'] > 70 else 'Oversold' if latest['RSI'] < 30 else 'Neutral'})")
+        print(f"• Trend: {'Above' if latest['Close'] > latest['SMA_20'] else 'Below'} 20-Day SMA")
+        print(f"• MACD: {'Bullish Crossover' if latest['MACD_Hist'] > 0 else 'Bearish Crossover'}")
+        
+        
+        print(f"\n--- Risk Profile ---")
+        print(f"• 20-Day Rolling Volatility: {latest['Volatility']:.4f} ({volatility_status})")
+        print(f"• Cumulative Return (Period): {latest['Cumulative_Return']*100:.2f}%")
+        print("-" * 50 + "\n")
+
 
     def run(self):
         self.load_data()
         self.data_preparation()
         self.calculate_indicators()
+        
         self.visualize()
+        self.finance_metrics()
+        self.output_insights()
