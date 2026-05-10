@@ -1,5 +1,5 @@
 venv/
 .csv
 data/
-venv_pynance/
+.pyc
 __pycache__/
