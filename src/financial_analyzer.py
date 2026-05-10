@@ -109,29 +109,39 @@ class FinancialAnalyzer:
         
 
     def visualize(self):
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-        
-        
-        ax1.plot(self.df.index, self.df['Close'], label='Close Price', alpha=0.7)
-        ax1.plot(self.df.index, self.df['PyN_SMA'], label='PyNance Simple Moving Average 20', color='orange')
-        ax1.set_title(f"{self.ticker} Technical Dashboard")
-        ax1.legend(loc='best')
-        
-        
-        ax2.plot(self.df.index, self.df['RSI'], color='purple', label='RSI')
-        ax2.axhline(70, color='red', linestyle='--', alpha=0.5)
-        ax2.axhline(30, color='green', linestyle='--', alpha=0.5)
-        ax2.set_ylabel('Relative Strength Index')
-        
-        # MACD
-        ax3.plot(self.df.index, self.df['MACD'], label='Moving Average Convergence Divergence', color='blue')
-        ax3.plot(self.df.index, self.df['MACD_Signal'], label='Signal', color='red')
-        ax3.bar(self.df.index, self.df['MACD'] - self.df['MACD_Signal'], color='gray', alpha=0.3)
-        ax3.legend(loc='best')
-        
-        plt.tight_layout()
+    # 1. Price and SMA Visualization
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.df.index, self.df['Close'], label='Close Price', alpha=0.7)
+        plt.plot(self.df.index, self.df['PyN_SMA'], label='PyNance SMA 20', color='orange')
+        plt.title(f"{self.ticker} Price Action & Moving Average")
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
         plt.show()
-        
+
+    # 2. RSI Visualization
+        plt.figure(figsize=(12, 4))
+        plt.plot(self.df.index, self.df['RSI'], color='purple', label='RSI')
+        plt.axhline(70, color='red', linestyle='--', alpha=0.5, label='Overbought (70)')
+        plt.axhline(30, color='green', linestyle='--', alpha=0.5, label='Oversold (30)')
+        plt.title(f"{self.ticker} Relative Strength Index")
+        plt.ylabel('RSI Value')
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.show()
+
+    # 3. MACD Visualization
+        plt.figure(figsize=(12, 5))
+        plt.plot(self.df.index, self.df['MACD'], label='MACD', color='blue')
+        plt.plot(self.df.index, self.df['MACD_Signal'], label='Signal', color='red')
+        plt.bar(self.df.index, self.df['MACD'] - self.df['MACD_Signal'], color='gray', alpha=0.3, label='Histogram')
+        plt.title(f"{self.ticker} MACD Analysis")
+        plt.xlabel('Date')
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.show()
+
     def output_insights(self):
         """Generates a professional summary of technical and financial status."""
         latest = self.df.iloc[-1]
@@ -165,7 +175,6 @@ class FinancialAnalyzer:
         self.load_data()
         self.data_preparation()
         self.calculate_indicators()
-        
         self.visualize()
         self.finance_metrics()
         self.output_insights()
