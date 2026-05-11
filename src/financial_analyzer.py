@@ -20,7 +20,7 @@ class FinancialAnalyzer:
         """Loads data with error handling for missing files."""
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(current_dir, '..', 'data', 'Data', f'{self.ticker}.csv')
+            file_path = os.path.join(current_dir, '..', 'data', 'raw', f'{self.ticker}.csv')
 
             file_path = os.path.normpath(file_path)
     
@@ -58,7 +58,7 @@ class FinancialAnalyzer:
         try:
             close = self.df['Close']
 
-            self.df['SMA_20'] = talib.SMA(close, timeperiod=20)
+            self.df['SMA_20'] = pn_tech.sma(close)
             self.df['EMA_20'] = talib.EMA(close, timeperiod=20)
             
             self.df['RSI'] = talib.RSI(close, timeperiod=14)
@@ -75,33 +75,53 @@ class FinancialAnalyzer:
             logger.error(f"Error calculating indicators: {e}")
         
 
+    
+    
 
     def finance_metrics(self):
         try:
             self.df['Daily_Return'] = self.df['Close'].pct_change()
             self.df['Cumulative_Return'] = (1 + self.df['Daily_Return']).cumprod() - 1
             self.df['Volatility'] = self.df['Daily_Return'].rolling(window=20).std()
+            self.df['Growth_Vol'] = self.df['Daily_Return'].rolling(window=60).std()
             self.df['Signal_Score'] = 0 
-            self.df['PyN_OBV'] = pn_tech.obv(self.df.Close, self.df.Volume)
-            upper, mid, lower = pn_tech.bollinger(self.df.Close, period=20, width=2)
-            self.df['BB_Upper'], self.df['BB_Mid'], self.df['BB_Lower'] = upper, mid, lower
-            self.df.loc[self.df['Close'] > self.df['SMA_20'], 'Signal_Score'] += 1 
-            self.df.loc[self.df['Close'] < self.df['SMA_20'], 'Signal_Score'] -= 1
+            self.df['PyN_OBV'] = talib.OBV(self.df.Close, self.df.Volume)
+            
+
+            upper, middle, lower = talib.BBANDS(
+                self.df['Close'], 
+                timeperiod=20, 
+                nbdevup=2, 
+                nbdevdn=2, 
+                matype=0
+            )
+            
+            self.df['BB_Upper'] = upper
+            self.df['BB_Mid'] = middle
+            self.df['BB_Lower'] = lower
+            
+
+            self.df.loc[self.df['Close'] > self.df['SMA_20'].fillna(0), 'Signal_Score'] += 1 
+            self.df.loc[self.df['Close'] < self.df['SMA_20'].fillna(float('inf')), 'Signal_Score'] -= 1
+            
             self.df.loc[self.df['RSI'] < 30, 'Signal_Score'] += 1
             self.df.loc[self.df['RSI'] > 70, 'Signal_Score'] -= 1
+            
             self.df.loc[self.df['MACD'] > self.df['MACD_Signal'], 'Signal_Score'] += 1
             self.df.loc[self.df['MACD'] < self.df['MACD_Signal'], 'Signal_Score'] -= 1
+
             def classify_verdict(score):
-                    if score >= 2: return 'Strong Bullish'
-                    elif score == 1: return 'Bullish'
-                    elif score == -1: return 'Bearish'
-                    elif score <= -2: return 'Strong Bearish'
-                    return 'Neutral'
+                if score >= 2: return 'Strong Bullish'
+                elif score == 1: return 'Bullish'
+                elif score == -1: return 'Bearish'
+                elif score <= -2: return 'Strong Bearish'
+                return 'Neutral'
 
             self.df['Technical_Verdict'] = self.df['Signal_Score'].apply(classify_verdict)
             
             logger.info(f"Technical sentiment and metrics calculated for {self.ticker}")
-            print(self.df['Technical_Verdict'])
+            print(self.df['Technical_Verdict'].tail())
+
         except Exception as e:
             logger.error(f"Error in finance_metrics: {e}")
 
@@ -142,12 +162,26 @@ class FinancialAnalyzer:
         plt.grid(True, alpha=0.3)
         plt.show()
 
+    #4 Price and Bollinger charts    
+        plt.figure(figsize=(10, 5))
+        plt.plot(self.df.index, self.df['Close'], label='Close Price', color='blue')
+        plt.plot(self.df.index, self.df['BB_Upper'], 'r--', alpha=0.4, label='Upper Band')
+        plt.plot(self.df.index, self.df['BB_Lower'], 'g--', alpha=0.4, label='Lower Band')
+        plt.fill_between(self.df.index, self.df['BB_Lower'], self.df['BB_Upper'], alpha=0.1)
+        plt.title(f"{self.ticker} Price & Bollinger Bands")
+        plt.legend()
+        plt.show()
+
+    #5. Growth Volatility
+        plt.figure(figsize=(10, 4))
+        plt.plot(self.df.index, self.df['Growth_Vol'], color='teal')
+        plt.title(f"{self.ticker} Growth Volatility (Stability Check)"); plt.show()
+
     def output_insights(self):
         """Generates a professional summary of technical and financial status."""
         latest = self.df.iloc[-1]
         prev = self.df.iloc[-2]
-        
-        
+
         price_change = ((latest['Close'] - prev['Close']) / prev['Close']) * 100
         volatility_status = "High" if latest['Volatility'] > self.df['Volatility'].mean() else "Low"
         
@@ -175,6 +209,6 @@ class FinancialAnalyzer:
         self.load_data()
         self.data_preparation()
         self.calculate_indicators()
-        self.visualize()
         self.finance_metrics()
+        self.visualize()
         self.output_insights()
