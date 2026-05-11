@@ -18,14 +18,17 @@ class SentimentCorrelationAnalyzer:
         self.stock_df = stock_df.copy()
         self.combined_df = None
         self.correlation = None
-        
-        # Initialize VADER
+        """
+        The choice of VADER for this class was driven by its specialized ability to interpret the intensity and nuance of short-form news headlines. 
+        Its lexicon-based approach provided the computational speed necessary to process over a decade of data across multiple tickers in seconds, without the overhead of deep-learning models. 
+        Crucially, VADER’s normalized compound score allowed for a direct, mathematically rigorous mapping of qualitative sentiment to quantitative stock returns, enabling the calculation of high-integrity correlation coefficients.
+        """
         nltk.download('vader_lexicon', quiet=True)
         self.sia = SentimentIntensityAnalyzer()
 
     def _calculate_returns(self):
         """Task 3.3: Compute daily percentage change in closing prices"""
-        # (Close_t - Close_t-1) / Close_t-1 * 100
+    
         self.stock_df['Daily_Return'] = self.stock_df['Close'].pct_change() * 100
         logger.info("Calculated daily stock returns.")
 
@@ -103,7 +106,7 @@ class SentimentCorrelationAnalyzer:
         plt.grid(True, alpha=0.3)
         plt.show()
 
-        # Visual 2: Categorical Bar Chart
+        
         self.combined_df['Category'] = pd.cut(
             self.combined_df['sentiment_score'], 
             bins=[-1, -0.1, 0.1, 1], 
@@ -126,7 +129,7 @@ class SentimentCorrelationAnalyzer:
         print(f"AUTOMATED INSIGHTS: {self.ticker} SENTIMENT ANALYSIS")
         print("="*50)
         
-        # Interpret Correlation Strength
+        
         strength = "very weak" if abs(self.correlation) < 0.1 else "moderate" if abs(self.correlation) < 0.4 else "strong"
         direction = "positive" if self.correlation > 0 else "negative"
         
@@ -153,7 +156,7 @@ class SentimentCorrelationAnalyzer:
         self._align_and_aggregate()
         
         if self.combined_df is not None and not self.combined_df.empty:
-            # Calculate Pearson correlation
+           
             self.correlation = self.combined_df['sentiment_score'].corr(self.combined_df['Daily_Return'])
             
             self._print_automated_insights()
