@@ -22,10 +22,15 @@ stock_news_sentiment/
 ├── notebooks/
 |  └── nlp/
 │       └── sentiment_analysis.ipnb 
-│   ├── AAPL.ipynb        
-│   └── AMZN.ipynb   
+│   ├── apple_analysis.ipynb        
+│   └── amazon_analysis.ipynb
+│   ├── google_analysis.ipynb        
+│   └── meta_nalysis.ipynb
+│   └── nvidia_analysis.ipynb        
+│   
 ├── src/
 │   ├── __init__.py
+│   ├── correlation_analysis.py
 │   └── financial_analyzer.py   
 ├── .gitignore                 
 ├── requirements.txt           
@@ -65,9 +70,14 @@ stock_news_sentiment/
 * **Indicator Implementation:** Leveraged `TA-Lib` and `PyNance` to compute **SMA, EMA, RSI, and MACD**.
 * **Sentiment Classification:** Developed a modular `FinancialAnalyzer` class to generate a **Technical Verdict** (Strong Bullish to Strong Bearish) based on indicator crossovers and momentum.
 
-### Task 3: Correlation & Predictive Strategy (In Progress)
 
-* Aligning daily sentiment scores with stock returns to calculate Pearson correlation coefficients and predictive beta values.
+### Task 3: Sentiment Correlation & Strategy Validation
+
+* **Correlation Analysis:** Successfully calculated Pearson correlation coefficients across all tickers, identifying a strong positive link (**0.4389**) between news sentiment and price action for high-conviction assets like Meta.
+* **Risk Asymmetry:** Quantified market sensitivity to news, revealing that negative sentiment typically exerts a significantly higher impact on daily returns (e.g., **-2.60%**) compared to positive catalysts.
+* **VADER Implementation:** Leveraged the VADER lexicon to generate normalized compound scores, providing the continuous numerical scale required to map qualitative headlines to quantitative financial returns.
+* **Predictive Insights:** Established sentiment as a directionally valid leading indicator, distinguishing between sentiment-led stocks and those driven by broader macroeconomic trends.
+
 
 ---
 
