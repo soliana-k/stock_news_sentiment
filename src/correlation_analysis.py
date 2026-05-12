@@ -9,31 +9,55 @@ import nltk
 logger = logging.getLogger(__name__)
 
 class SentimentCorrelationAnalyzer:
+    """
+    Analyzes the relationship between financial news sentiment and stock price movements.
+    
+    This class handles date alignment between news and stock data, applies VADER sentiment 
+    analysis, computes daily returns, and performs correlation analysis with visualizations.
+    
+    Attributes:
+        ticker (str): Stock symbol being analyzed
+        stock_df (pd.DataFrame): Pre-processed stock price DataFrame from FinancialAnalyzer
+        combined_df (pd.DataFrame): Aligned DataFrame with sentiment scores and returns
+        correlation (float): Pearson correlation between sentiment and daily returns
+    """
     def __init__(self, ticker, stock_df):
         """
-        :param ticker: Stock symbol
-        :param stock_df: Dataframe from FinancialAnalyzer
+        Initialize the SentimentCorrelationAnalyzer.
+        
+        Args:
+            ticker (str): Stock symbol (e.g., 'GOOG')
+            stock_df (pd.DataFrame): Cleaned stock price DataFrame with 'Close' column
         """
         self.ticker = ticker
         self.stock_df = stock_df.copy()
         self.combined_df = None
         self.correlation = None
-        """
-        The choice of VADER for this class was driven by its specialized ability to interpret the intensity and nuance of short-form news headlines. 
-        Its lexicon-based approach provided the computational speed necessary to process over a decade of data across multiple tickers in seconds, without the overhead of deep-learning models. 
-        Crucially, VADER’s normalized compound score allowed for a direct, mathematically rigorous mapping of qualitative sentiment to quantitative stock returns, enabling the calculation of high-integrity correlation coefficients.
-        """
+
+        # Initialize VADER Sentiment Analyzer
+        # VADER was chosen for its excellent performance on short-form financial headlines,
+        # speed, and ability to capture intensity (compound score).
         nltk.download('vader_lexicon', quiet=True)
         self.sia = SentimentIntensityAnalyzer()
 
     def _calculate_returns(self):
-        """Task 3.3: Compute daily percentage change in closing prices"""
+        """
+        Calculate daily percentage returns from closing prices.
+        """
     
         self.stock_df['Daily_Return'] = self.stock_df['Close'].pct_change() * 100
         logger.info("Calculated daily stock returns.")
 
     def _calculate_sentiment(self, df):
-        """Task 3.2: Apply VADER to assign numerical sentiment scores"""
+        """
+        Apply VADER sentiment analysis to headlines.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing news headlines
+            
+        Returns:
+            pd.DataFrame: Original DataFrame with added 'sentiment_score' column
+        """
         
         text_col = 'clean_headline' if 'clean_headline' in df.columns else 'headline'
         df['sentiment_score'] = df[text_col].apply(
@@ -42,7 +66,12 @@ class SentimentCorrelationAnalyzer:
         return df
 
     def _align_and_aggregate(self):
-        """Task 3.1 & 3.4: Date alignment and daily sentiment averaging"""
+        """
+        Align news articles with trading days and compute average daily sentiment.
+        
+        Handles weekend/holiday alignment by forwarding news to the next trading day.
+        """
+
         current_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_dir, '..', 'data', 'processed', 'analysed_text.csv')
         file_path = os.path.normpath(file_path)
@@ -92,7 +121,7 @@ class SentimentCorrelationAnalyzer:
         )
 
     def _generate_visuals(self):
-        """Task 3.4: Separate visuals for scatter and bar chart"""
+        """Generate correlation scatter plot and sentiment category bar chart."""
 
         plt.figure(figsize=(10, 6))
         sns.regplot(x='sentiment_score', y='Daily_Return', data=self.combined_df, 
@@ -124,7 +153,7 @@ class SentimentCorrelationAnalyzer:
         plt.show()
 
     def _print_automated_insights(self):
-        """Task 3.5: Automated interpretation of results"""
+        """Print automated interpretation of correlation results."""
         print("\n" + "="*50)
         print(f"AUTOMATED INSIGHTS: {self.ticker} SENTIMENT ANALYSIS")
         print("="*50)
@@ -151,7 +180,12 @@ class SentimentCorrelationAnalyzer:
         print("="*50 + "\n")
 
     def run(self):
-        """Execute the full encapsulated pipeline"""
+        """
+        Execute the full sentiment-to-returns correlation pipeline.
+        
+        Returns:
+            float: Pearson correlation coefficient between sentiment and returns
+        """
         self._calculate_returns()
         self._align_and_aggregate()
         

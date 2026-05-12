@@ -11,13 +11,37 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class FinancialAnalyzer:
+    """
+    A modular class for loading, cleaning, and analyzing stock price data.
+    
+    It computes technical indicators using TA-Lib and PyNance, generates 
+    financial metrics, and produces visualizations and investment insights.
+    
+    Attributes:
+        ticker (str): Stock symbol to analyze (e.g., 'GOOG', 'AAPL')
+        df (pd.DataFrame): Processed DataFrame containing price data and indicators
+    """
     def __init__(self, ticker):
+        """
+        Initialize the FinancialAnalyzer with a stock ticker.
+        
+        Args:
+            ticker (str): Stock symbol (e.g., 'GOOG')
+        """
         self.ticker = ticker
         self.df=None
        
     
     def load_data(self):
-        """Loads data with error handling for missing files."""
+        """
+        Load stock price data from CSV with robust error handling.
+        
+        Expected file location: ../data/raw/{ticker}.csv
+        
+        Raises:
+            FileNotFoundError: If the data file does not exist
+            Exception: For other loading errors
+        """
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             file_path = os.path.join(current_dir, '..', 'data', 'raw', f'{self.ticker}.csv')
@@ -35,6 +59,15 @@ class FinancialAnalyzer:
             raise
     
     def data_preparation(self):
+        """
+        Clean and standardize the loaded stock data.
+        
+        Operations performed:
+        - Convert 'Date' to datetime and set as index
+        - Standardize column names (capitalize)
+        - Convert price/volume columns to float
+        - Forward-fill missing values and drop any remaining NaNs
+        """
         try:
             self.df['Date'] = pd.to_datetime(self.df['Date'])
             self.df.set_index('Date', inplace=True)
@@ -55,6 +88,15 @@ class FinancialAnalyzer:
 
 
     def calculate_indicators(self):
+        """
+        Calculate technical indicators using TA-Lib and PyNance.
+        
+        Adds the following columns to self.df:
+            - SMA_20, EMA_20
+            - RSI
+            - MACD, MACD_Signal, MACD_Hist
+            - BB_Upper, BB_Mid, BB_Lower (Bollinger Bands)
+        """
         try:
             close = self.df['Close']
 
@@ -79,6 +121,13 @@ class FinancialAnalyzer:
     
 
     def finance_metrics(self):
+        """
+        Calculate financial metrics and generate a composite technical verdict.
+        
+        Adds the following columns:
+            - Daily_Return, Cumulative_Return, Volatility
+            - Signal_Score and Technical_Verdict (Strong Bullish → Strong Bearish)
+        """
         try:
             self.df['Daily_Return'] = self.df['Close'].pct_change()
             self.df['Cumulative_Return'] = (1 + self.df['Daily_Return']).cumprod() - 1
@@ -129,6 +178,7 @@ class FinancialAnalyzer:
         
 
     def visualize(self):
+        """Generate key technical analysis visualizations."""
     # 1. Price and SMA Visualization
         plt.figure(figsize=(12, 6))
         plt.plot(self.df.index, self.df['Close'], label='Close Price', alpha=0.7)
@@ -206,6 +256,10 @@ class FinancialAnalyzer:
 
 
     def run(self):
+        """
+        Execute the full analysis pipeline for the ticker.
+        """
+
         self.load_data()
         self.data_preparation()
         self.calculate_indicators()
